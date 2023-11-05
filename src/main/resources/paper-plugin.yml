@@ -1,0 +1,4 @@
+name: PerkPlugin
+version: '${project.version}'
+main: perkplugin.perkplugin.PerkPlugin
+api-version: '1.20'
