@@ -1,0 +1,18 @@
+name: PerkPlugin
+version: '${project.version}'
+main: perkplugin.perkplugin.PerkPlugin
+api-version: '1.20'
+commands:
+  fly:
+    description: Toggles Flying
+    usage: /fly
+    aliases: [f, flying, togglefly]
+    permission-message: "NOT STINKY"
+    permission: stinkers
+  perks:
+    description: Choose your perks
+    usage: /perks
+    permission: L
+  lastInventory:
+    description: Get Your Last Death Inventory
+    usage: /lastInventory
