@@ -5,6 +5,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
+// THIS IS A TEST
 public class Fly implements CommandExecutor {
     @Override
     public  boolean onCommand(CommandSender sender, Command command, String Label, String [] args){

@@ -5,10 +5,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
-import java.util.HashSet;
-import java.util.Set;
-
-public class buffUtil {
+public class BuffUtil {
     public void giveBuff(Player player, PotionEffectType type, int duration, int amplifier){
         PotionEffect potionEffect = new PotionEffect(type, duration * 20, amplifier - 1, true, false);
 
@@ -22,24 +19,6 @@ public class buffUtil {
         Player player = getPlayerFromUUIDString(playerString);
         player.addPotionEffect(potionEffect);
     }
-
-    private PotionEffect[] getBuff(String playerString){
-
-        if(!PermissionUtil.perkPointer.containsKey(playerString)){
-            return null;
-        }
-
-        Set<PotionEffect> AddEffects = new HashSet<PotionEffect>();
-
-        for(String perk : PermissionUtil.perkPointer.get(playerString).keySet()){
-            Bukkit.getLogger().info(perk);
-
-
-        }
-
-        return null;
-    }
-
 
     public static Player getPlayerFromUUIDString(String uuidString) {
         try {

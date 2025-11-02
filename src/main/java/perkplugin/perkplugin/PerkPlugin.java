@@ -1,81 +1,107 @@
 package perkplugin.perkplugin;
 
 import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.block.Block;
-import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.potion.PotionEffectType;
+import perkplugin.perkplugin.commands.ListPerks;
 import perkplugin.perkplugin.commands.PerkSelector;
 import perkplugin.perkplugin.handlers.PlayerHandler;
-import perkplugin.perkplugin.perks.minor.lastInventory;
-import perkplugin.perkplugin.runables.isInWaterChecker;
-import perkplugin.perkplugin.runables.nightTimeChecker;
+import perkplugin.perkplugin.classes.PerkCustom;
+import perkplugin.perkplugin.classes.PlayerCustom;
+import perkplugin.perkplugin.perks.minor.PrizedPossessions;
+import perkplugin.perkplugin.runables.SchedulerManager;
 import perkplugin.perkplugin.util.*;
 import perkplugin.perkplugin.commands.Fly;
 
 import java.util.*;
 
-import static perkplugin.perkplugin.util.buffUtil.getPlayerFromUUIDString;
-
 public final class PerkPlugin extends JavaPlugin {
-    public HashMap<String, Set<String>> playerPermissions = new HashMap<String, Set<String>>();
-    public HashMap<String, HashMap<String, String>> perkPointer = new HashMap<String, HashMap<String, String>>();
+    public HashMap<String, PlayerCustom> playerMap = new HashMap<String, PlayerCustom>();
+    public HashMap<String, PerkCustom> perkMap = new HashMap<String, PerkCustom>();
 
-    // effects = {perk: {pro: {effectName: [strength, duration]}, anit: {effectName: [strength, duration]}} , anotherPerk: .... }
-    public static HashMap<String, ArrayList<ArrayList<String>>> perkBuffs = new HashMap<String, ArrayList<ArrayList<String>>>();
-    private buffUtil buffUtil = new buffUtil();
 
     @Override
     public void onEnable() {
         // Plugin startup logic
         saveDefaultConfig();
 
+        // Adding all perks to the perkMap and setting them up
         getPerkEffects();
 
         // Populates playerPermissions HashMap
-        setUpPlayerPermissions();
+        setUpPlayerPerks();
 
         // Creating the commands
         getCommand("fly").setExecutor(new Fly());
         getCommand("perks").setExecutor(new PerkSelector(this));
-        getCommand("lastInventory").setExecutor(new lastInventory(this));
+        getCommand("lastInventory").setExecutor(new PrizedPossessions(this));
+        getCommand("listPerks").setExecutor(new ListPerks(this));
 
         // Creating objects that are not used??
         new PlayerHandler(this);
         new DelayedTask(this);
 
         // Starting the runnables
-        new nightTimeChecker(this).nightTimeChecker();
-        new isInWaterChecker(this).inWaterChecker();
+        SchedulerManager schedulerManager = new SchedulerManager(this);
+        schedulerManager.EverySecondRunnable();
+
     }
 
     @Override
     public void onDisable() {
         // Plugin shutdown logic
         Bukkit.getLogger().info("Shut Down");
-        playerPermissions.clear();
+        playerMap.clear();
+        perkMap.clear();
     }
 
-    private void setUpPlayerPermissions(){
-        for(String permission : this.getConfig().getConfigurationSection("Perks").getKeys(false)){
-            List<String> playerList = this.getConfig().getStringList("Perks." + permission);
+    private void setUpPlayerPerks(){
+        for(String perkName : this.getConfig().getConfigurationSection("Perks").getKeys(false)){
+            List<String> playerList = this.getConfig().getStringList("Perks." + perkName);
 
-            playerPermissions.put(permission, new HashSet<>(playerList));
+            // Adding list of players to the perkMap from the file
+            if(perkMap.containsKey(perkName)){
+                perkMap.get(perkName).addPlayersToPerk(new HashSet<>(playerList));
+            }else{
+                perkMap.put(perkName, new PerkCustom(perkName));
+                perkMap.get(perkName).addPlayersToPerk(new HashSet<>(playerList));
+            }
+
         }
     }
 
     private void getPerkEffects(){
+        // Looping through the config file and adding info to the hash sets
         for(String perk : this.getConfig().getConfigurationSection("effects").getKeys(false)) {
-            Bukkit.getLogger().info(perk);
-            for(String type : this.getConfig().getConfigurationSection("effects." + perk).getKeys(false)){
-                Bukkit.getLogger().info(type);
-                for(String effect : this.getConfig().getConfigurationSection("effects." + perk + "." + type).getKeys(false)){
-                    Bukkit.getLogger().info(effect + " FOR " + this.getConfig().getStringList("effects." + perk + "." + type + "." +effect).toString());
-                }
 
+            // Adding every perk
+            perkMap.put(perk, new PerkCustom(perk));
+
+            // Looping through both pro and anti sections
+            for(String type : this.getConfig().getConfigurationSection("effects." + perk).getKeys(false)){
+
+                // Looping through the effects
+                for(String effect : this.getConfig().getConfigurationSection("effects." + perk + "." + type).getKeys(false)){
+                    // Getting the strength and duration
+                    List<Double> file_information = this.getConfig().getDoubleList("effects." + perk + "." + type + "." +effect);
+
+                    // Adding the pro and the anti information from the yaml file
+                    if(type.equals("pro")){
+                        perkMap.get(perk).addProBuff(effect, file_information);
+                    }else{
+                        perkMap.get(perk).addAntiBuff(effect, file_information);
+                    }
+
+                }
             }
         }
+
+        // Printing the information
+        for (Map.Entry<String, PerkCustom> entry1 : perkMap.entrySet()) {
+            PerkCustom currPerk = entry1.getValue();
+            Bukkit.getLogger().info("Perks " + currPerk.getPerkName());
+            currPerk.printProBuffs();
+            currPerk.printAntiBuffs();
+        }
+
     }
 }

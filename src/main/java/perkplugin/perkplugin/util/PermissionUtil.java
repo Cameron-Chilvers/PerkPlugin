@@ -3,25 +3,26 @@ package perkplugin.perkplugin.util;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import perkplugin.perkplugin.PerkPlugin;
+import perkplugin.perkplugin.classes.PerkCustom;
+import perkplugin.perkplugin.classes.PlayerCustom;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
+
 
 public class PermissionUtil {
     // perk.prized-possessions
-    private HashMap<String, Set<String>> playerPermissions;
+    private HashMap<String, PerkCustom> perkMap;
     private static PerkPlugin plugin;
-    public static HashMap<String, HashMap<String, String>> perkPointer;
+    public static HashMap<String, PlayerCustom> playerMap;
     public PermissionUtil(PerkPlugin plugin){
         this.plugin = plugin;
-        this.playerPermissions = plugin.playerPermissions;
-        this.perkPointer = plugin.perkPointer;
+        this.perkMap = plugin.perkMap;
+        this.playerMap = plugin.playerMap;
     }
 
     public static boolean checkForPermission(Player player, String permission){
-        return plugin.playerPermissions.containsKey(permission) && plugin.playerPermissions.get(permission).contains(player.getUniqueId().toString());
+        return plugin.perkMap.containsKey(permission) && plugin.perkMap.get(permission).containsPlayer(player.getUniqueId().toString());
     }
 
 
@@ -33,20 +34,20 @@ public class PermissionUtil {
             configUtil.save();
         }
 
-        ConfigurationSection perksConfig = configUtil.getConfig().getConfigurationSection("Perks");
+        ConfigurationSection perksConfigSection = configUtil.getConfig().getConfigurationSection("Perks");
 
         // Check if perk in the configFile
-        if(!perksConfig.contains(perk)){
+        if(!perksConfigSection.contains(perk)){
             // Add the perk
-            perksConfig.createSection(perk);
-            perksConfig.set(perk, new ArrayList<>(playerPermissions.get(perk)));
+            perksConfigSection.createSection(perk);
+            perksConfigSection.set(perk, new ArrayList<>(perkMap.get(perk).returnAllPlayers()));
 
             configUtil.save();
             return;
         }
 
-        if(!perksConfig.getStringList(perk).contains(playerUUIDString)) {
-            perksConfig.set(perk, new ArrayList<>(playerPermissions.get(perk)));
+        if(!perksConfigSection.getStringList(perk).contains(playerUUIDString)) {
+            perksConfigSection.set(perk, new ArrayList<>(perkMap.get(perk).returnAllPlayers()));
 
             configUtil.save();
         }
@@ -54,23 +55,24 @@ public class PermissionUtil {
 
     // Using this to add the player perk file
     private void addToPlayerPerkFile(Player player, String perk, String playerUUIDString){
-        ConfigUtil playerPerkConfigUtil = new ConfigUtil(plugin, "player_perks/" + player.getUniqueId() + ".yml");
+        ConfigUtil playerConfigUtil = new ConfigUtil(plugin, "player_perks/" + player.getUniqueId() + ".yml");
 
-        if(playerPerkConfigUtil.getConfig().isConfigurationSection("Perks")){
+        if(playerConfigUtil.getConfig().isConfigurationSection("Perks")){
             // add perk to the list here
-            if(!playerPerkConfigUtil.getConfig().getConfigurationSection("Perks").contains(perk)){
-                playerPerkConfigUtil.getConfig().set("Perks."+perk, perkPointer.get(playerUUIDString).get(perk));
+            if(!playerConfigUtil.getConfig().getConfigurationSection("Perks").contains(perk)){
+                // Addint the perk and its item
+                playerConfigUtil.getConfig().set("Perks."+perk, playerMap.get(playerUUIDString).getPerkItem(perk));
             }
         }else{
             // create file and add the dict
-            for (String key : perkPointer.get(playerUUIDString).keySet()) {
-                String value = perkPointer.get(playerUUIDString).get(key);
+            for (String key : playerMap.get(playerUUIDString).getAllPlayerPerksSet()) {
+                String value = playerMap.get(playerUUIDString).getPerkItem(key);
 
-                playerPerkConfigUtil.getConfig().set("Perks."+key, value);
+                playerConfigUtil.getConfig().set("Perks."+key, value);
             }
         }
 
-        playerPerkConfigUtil.save();
+        playerConfigUtil.save();
     }
 
     // Used to call the function with three parameters
@@ -85,25 +87,19 @@ public class PermissionUtil {
         // Get the 'Perks' section from the config
 
         // Check if permission exists in HashMap
-        if(!playerPermissions.containsKey(perk)){
-            playerPermissions.put(perk, new HashSet<String>());
-            playerPermissions.get(perk).add(playerUUIDString);
+        if(!perkMap.containsKey(perk)){
+            perkMap.put(perk, new PerkCustom(perk));
+            perkMap.get(perk).addPlayerToPerk(playerUUIDString);
         }
 
         // Check if playing in the permissions Set
-        if(!playerPermissions.get(perk).contains(playerUUIDString)){
-            playerPermissions.get(perk).add(playerUUIDString);
+        if(!perkMap.get(perk).containsPlayer(playerUUIDString)){
+            perkMap.get(perk).addPlayerToPerk(playerUUIDString);
         }
 
         // Add to player perk map
-        if(!perkPointer.containsKey(playerUUIDString)){
-            perkPointer.put(playerUUIDString, new HashMap<String, String>());
-        }
+        playerMap.get(playerUUIDString).addPerk(perk, addition);
 
-        // Add to player perk map
-        if(!perkPointer.get(playerUUIDString).containsKey(perk)){
-            perkPointer.get(playerUUIDString).put(perk, addition);
-        }
 
         // Helper function defined above
         addToConfigFile(perk, configUtil, playerUUIDString);
@@ -118,27 +114,29 @@ public class PermissionUtil {
         ConfigurationSection perksConfig = configUtil.getConfig().getConfigurationSection("Perks");
 
         // Checks if perk exists
-        if (!playerPermissions.containsKey(perk)) {
+        if (!perkMap.containsKey(perk)) {
             return;
         }
 
         // Checks if player in the perk
-        if (!playerPermissions.get(perk).contains(playerUUIDString)) {
+        if (!perkMap.get(perk).containsPlayer(playerUUIDString)) {
             return;
         }
 
         // Removing from set and updating the config file
-        playerPermissions.get(perk).remove(playerUUIDString);
-        perksConfig.set(perk, new ArrayList<>(playerPermissions.get(perk)));
+        perkMap.get(perk).removePlayerFromPerk(playerUUIDString);
+        perksConfig.set(perk, new ArrayList<>(perkMap.get(perk).returnAllPlayers()));
         configUtil.save();
 
-        if (perkPointer.containsKey(playerUUIDString) && perkPointer.get(playerUUIDString).containsKey(perk)) {
-            perkPointer.get(playerUUIDString).remove(perk);
+        if (playerMap.containsKey(playerUUIDString) && playerMap.get(playerUUIDString).playerHasPerk(perk)) {
+            playerMap.get(playerUUIDString).removePerk(perk);
             ConfigUtil playerPerkConfigUtil = new ConfigUtil(plugin, "player_perks/" + player.getUniqueId() + ".yml");
             // Setting to null deletes from the yml
             playerPerkConfigUtil.getConfig().set("Perks." + perk, null);
 
             playerPerkConfigUtil.save();
         }
+
+        plugin.playerMap.get(playerUUIDString).assignBuffs();
     }
 }

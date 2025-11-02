@@ -4,9 +4,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
-import org.bukkit.attribute.AttributeModifier;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.Item;
+
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -15,53 +13,73 @@ import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
-import org.bukkit.event.player.PlayerItemHeldEvent;
+
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
+
 import perkplugin.perkplugin.PerkPlugin;
-import perkplugin.perkplugin.perks.major.insatiable;
-import perkplugin.perkplugin.perks.major.nakedWarrior;
-import perkplugin.perkplugin.perks.major.pickyEater;
+import perkplugin.perkplugin.classes.PlayerCustom;
+import perkplugin.perkplugin.perks.Perks;
+import perkplugin.perkplugin.perks.major.*;
 import perkplugin.perkplugin.util.*;
 
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
+
 
 public class PlayerHandler implements Listener {
     private PerkPlugin plugin;
     private InventoryUtil inventoryUtil;
+    private final List<Perks> startUpList = new ArrayList<>();
+
 
     public PlayerHandler(PerkPlugin plugin){
         Bukkit.getPluginManager().registerEvents(this, plugin);
         this.plugin = plugin;
         inventoryUtil = new InventoryUtil(plugin);
+
+        startUpList.add(new Insatiable(plugin));
+        startUpList.add(new NakedWarrior(plugin));
+        startUpList.add(new FishyBoi(plugin));
+        startUpList.add(new Vampirism(plugin));
+
     }
 
-    public void setUpPerkPointer(Player player){
+    private void setUpPlayerAllPerk(PlayerCustom player){
+        String playerUUIDString = player.getPlayerUUIDString();
         // Check if file
-        ConfigUtil configUtil = new ConfigUtil(plugin, "player_perks/" + player.getUniqueId() + ".yml");
+        ConfigUtil configUtil = new ConfigUtil(plugin, "player_perks/" + playerUUIDString + ".yml");
         if(configUtil.getConfig().isConfigurationSection("Perks")){
             // Get perks and stuff and add to perk pointer
             Bukkit.getLogger().info("HAS PLAYER FILE");
-            plugin.perkPointer.put(player.getUniqueId().toString(), new HashMap<String, String>());
 
             for (String key : configUtil.getConfig().getConfigurationSection("Perks").getKeys(false)) {
-                plugin.perkPointer.get(player.getUniqueId().toString()).put(key, configUtil.getConfig().getConfigurationSection("Perks").getString(key));
-            }
+                String perkInfo = configUtil.getConfig().getConfigurationSection("Perks").getString(key);
 
-            Bukkit.getLogger().info(plugin.perkPointer.toString());
+                player.addPerk(key, perkInfo);
+            }
 
         }else{
             // Add name to perkPointer but have it be empty
             Bukkit.getLogger().info("NO PLAYER FILE");
-            plugin.perkPointer.put(player.getUniqueId().toString(), new HashMap<String, String>());
-            Bukkit.getLogger().info(plugin.perkPointer.toString());
-
         }
-
     }
+
+    private void setUpPermanentPerks(Player player){
+        PermissionUtil permUtil = new PermissionUtil(plugin);
+
+        for(Perks perk : startUpList){
+            String perkName = perk.getName();
+            if(!permUtil.checkForPermission(player, perkName)){
+                continue;
+            }
+
+            perk.giveBuff(player);
+        }
+    }
+
+
     Player prevPLayer;
 
     public void printAllAttributes(Player player) {
@@ -78,6 +96,9 @@ public class PlayerHandler implements Listener {
     public void onPlayerJoin(PlayerJoinEvent event){
         Player player = event.getPlayer();
 
+        PlayerCustom newPlayerCustom = new PlayerCustom(player, plugin);
+        plugin.playerMap.put(player.getUniqueId().toString(), newPlayerCustom);
+
         if(prevPLayer != null){
             player.addPassenger(prevPLayer);
         }
@@ -90,24 +111,13 @@ public class PlayerHandler implements Listener {
             player.getAttribute(Attribute.GENERIC_ATTACK_SPEED).setBaseValue(4);
             player.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.1);
 
-            AttributeInstance attackSpeedAttribute = player.getAttribute(Attribute.GENERIC_ATTACK_SPEED);
-
-            /*
-            for(AttributeModifier removeall : attackSpeedAttribute.getModifiers()){
-                attackSpeedAttribute.removeModifier(removeall);
-            }
-
-            Bukkit.getLogger().info(attackSpeedAttribute.getModifiers().toString());*/
-
         }
 
         printAllAttributes(player);
 
-        setUpPerkPointer(player);
+        setUpPlayerAllPerk(newPlayerCustom);
 
-        if(new PermissionUtil(plugin).checkForPermission(player,"naked-warrior")){
-            new nakedWarrior(plugin).nakedBuff(player);
-        }
+        setUpPermanentPerks(player);
 
         /* TUTORIAL CODE TO GIVE TORCHES WHEN SPAWN IN
         ItemStack item = new ItemStack(Material.TORCH, 64 );
@@ -128,7 +138,11 @@ public class PlayerHandler implements Listener {
     @EventHandler
     public void onPlayerLeave(PlayerQuitEvent event){
         Player player = event.getPlayer();
-        plugin.perkPointer.remove(player.getUniqueId().toString());
+
+        PlayerCustom playerLeftObject = plugin.playerMap.get(player.getUniqueId().toString());
+        playerLeftObject.saveToFile();
+
+        plugin.playerMap.remove(player.getUniqueId().toString());
     }
 
     @EventHandler
@@ -203,8 +217,20 @@ public class PlayerHandler implements Listener {
         ItemStack itemStack = (ItemStack) event.getItem();
 
         // Getting picky Eater events
-        new pickyEater(plugin).pickyBuff(player, itemStack, event);
+        // This gets spammed when the event goes off idk why
+        String pickyEaterName = "picky-eater";
+        if(new PermissionUtil(plugin).checkForPermission(player, pickyEaterName)) {
+            ItemStack pickyItem = new ItemStack(Material.valueOf(plugin.playerMap.get(player.getUniqueId().toString()).getPerkItem(pickyEaterName)));
 
+            Bukkit.getLogger().info(pickyItem.getType().toString());
+
+            if (itemStack.getType() != pickyItem.getType()) {
+                event.setCancelled(true);
+                return;
+            }
+
+            new PickyEater(plugin).giveBuff(player);
+        }
     }
 
     @EventHandler
@@ -213,11 +239,10 @@ public class PlayerHandler implements Listener {
             Player player = (Player) event.getEntity();
 
             // calling insatiable class
-            new insatiable(plugin).insatiableActive(player, event);
-
-
+            new Insatiable(plugin).giveBuff(player);
         }
     }
+
     /*
     @EventHandler
     public void breakBlock(BlockBreakEvent event){

@@ -14,11 +14,11 @@ import perkplugin.perkplugin.PerkPlugin;
 import perkplugin.perkplugin.util.InventoryUtil;
 import perkplugin.perkplugin.util.PermissionUtil;
 
-public class lastInventory implements Listener, CommandExecutor {
+public class PrizedPossessions implements Listener, CommandExecutor {
     private PerkPlugin plugin;
     private InventoryUtil inventoryUtil;
     private int items = 3;
-    public lastInventory(PerkPlugin plugin){
+    public PrizedPossessions(PerkPlugin plugin){
         Bukkit.getPluginManager().registerEvents(this, plugin);
         this.plugin = plugin;
         this.inventoryUtil = new InventoryUtil(plugin);
@@ -60,9 +60,7 @@ public class lastInventory implements Listener, CommandExecutor {
         }
         Player player = (Player) sender;
 
-        Bukkit.getLogger().info(plugin.playerPermissions.toString());
-        Bukkit.getLogger().info(String.valueOf(plugin.playerPermissions.containsKey("prized-possessions")));
-        if(!new PermissionUtil(plugin).checkForPermission(player, "prized-possessions")) {
+       if(!new PermissionUtil(plugin).checkForPermission(player, "prized-possessions")) {
             sender.sendMessage(ChatColor.RED + "You do not have this perk");
             return true;
         }

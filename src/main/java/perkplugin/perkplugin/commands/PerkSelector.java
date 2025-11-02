@@ -13,10 +13,9 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
 import perkplugin.perkplugin.PerkPlugin;
-import perkplugin.perkplugin.perks.major.nakedWarrior;
+import perkplugin.perkplugin.perks.major.NakedWarrior;
 import perkplugin.perkplugin.util.PermissionUtil;
 
 
@@ -126,11 +125,19 @@ public class PerkSelector implements Listener, CommandExecutor {
             case 10:
                 player.sendMessage("Add Naked-Warrior");
                 permissionUtil.addPermission(player, "naked-warrior");
-                new nakedWarrior(plugin).nakedBuff(player);
+                new NakedWarrior(plugin).giveBuff(player);
                 break;
             case 11:
                 player.sendMessage("Remove Naked-Warrior");
                 permissionUtil.removePermission(player, "naked-warrior");
+                break;
+            case 12:
+                player.sendMessage("Add Dwarven-Aptitude");
+                permissionUtil.addPermission(player, "dwarven-aptitude");
+                break;
+            case 13:
+                player.sendMessage("Remove Dwarven-Aptitude");
+                permissionUtil.removePermission(player, "dwarven-aptitude");
                 break;
         }
     }
@@ -154,7 +161,7 @@ public class PerkSelector implements Listener, CommandExecutor {
                 ItemStack clickedItem = event.getCurrentItem();
 
                 // Check if the clicked item is armor
-                if (isArmor(clickedItem.getType())) {
+                if (clickedItem != null && isArmor(clickedItem.getType())) {
                     event.setCancelled(true); // Prevent equipping armor
                     player.sendMessage("You cannot use amour");
                 }
@@ -214,6 +221,8 @@ public class PerkSelector implements Listener, CommandExecutor {
         inv.setItem(9, getItem(new ItemStack(Material.COOKED_COD), "&9Remove Fishy Boi", "&9Remove Fishy Boi?", "&aBOOOOOOOOOOOO"));
         inv.setItem(10, getItem(new ItemStack(Material.DIAMOND_CHESTPLATE), "&9Add Naked Warrior", "&9Description of add Naked Warrior?", "&aBOOOOOOOOOOOO"));
         inv.setItem(11, getItem(new ItemStack(Material.GOLDEN_CHESTPLATE), "&9Remove Naked Warrior", "&9Remove Naked Warrior?", "&aBOOOOOOOOOOOO"));
+        inv.setItem(12, getItem(new ItemStack(Material.DIAMOND_PICKAXE), "&Add Dwarven Aptitude", "&Add Dwarven Aptitude?", "&aBOOOOOOOOOOOO"));
+        inv.setItem(13, getItem(new ItemStack(Material.GOLDEN_PICKAXE), "&9Remove Dwarven Aptitude", "&9Remove Dwarven Aptitude?", "&aBOOOOOOOOOOOO"));
 
         player.openInventory(inv);
 

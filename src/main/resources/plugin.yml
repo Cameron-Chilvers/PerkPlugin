@@ -16,3 +16,6 @@ commands:
   lastInventory:
     description: Get Your Last Death Inventory
     usage: /lastInventory
+  listPerks:
+    description: List all Perks you have
+    usage: /listPerks
