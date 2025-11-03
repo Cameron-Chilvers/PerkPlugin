@@ -65,7 +65,12 @@ public class PlayerCustom {
 
         HashMap<String, List<Float>> newPotions = calculatePotions();
         if(!newPotions.equals(potionValues)){
-            this.player.clearActivePotionEffects();
+            //this.player.clearActivePotionEffects();
+            Collection<PotionEffect> currentPotionEffects = this.player.getActivePotionEffects();
+            for (PotionEffect potionEffect : currentPotionEffects){
+                this.player.removePotionEffect(potionEffect.getType());
+            }
+
 
             // Looping new potion values
             for(Map.Entry<String, List<Float>> potion : newPotions.entrySet()){
