@@ -12,7 +12,6 @@ commands:
   perks:
     description: Choose your perks
     usage: /perks
-    permission: L
   lastInventory:
     description: Get Your Last Death Inventory
     usage: /lastInventory

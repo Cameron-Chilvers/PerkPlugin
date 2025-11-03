@@ -1,7 +1,118 @@
-kit:
-  - DIAMOND_SWORD
-  - TORCH
 Perks:
-  prized-possessions:
+  vampirism: []
+  insatiable: []
+  naked-warrior: []
+  prized-possessions: []
+  picky-eater: []
+  fishy-boi: []
+  dwarven-aptitude:
     - d1e3cf2a-7608-4640-b625-85d1bf87b5c2
-
+effects:
+  picky-eater:
+    pro:
+      REGENERATION:
+        - '2'
+        - '30'
+      FAST_DIGGING:
+        - '3'
+        - '30'
+      SATURATION:
+        - '4'
+        - '30'
+      HEALTH_BOOST:
+        - '1'
+        - '30'
+      INCREASE_DAMAGE:
+        - '1'
+        - '30'
+      SPEED:
+        - '1'
+        - '30'
+  vampirism:
+    pro:
+      REGENERATION:
+        - '1'
+        - '99999'
+      FAST_DIGGING:
+        - '1'
+        - '99999'
+      GENERIC_MAX_HEALTH:
+        - '4'
+        - '0'
+      GENERIC_ATTACK_DAMAGE:
+        - '1'
+        - '0'
+      GENERIC_MOVEMENT_SPEED:
+        - '0.2'
+        - '0'
+      GENERIC_LUCK:
+        - '2'
+        - '0'
+    anti:
+      GENERIC_MOVEMENT_SPEED:
+        - '-0.2'
+        - '30'
+      GENERIC_ATTACK_DAMAGE:
+        - '-1'
+        - '0'
+      GENERIC_LUCK:
+        - '-2'
+        - '0'
+      DARKNESS:
+        - '1'
+        - '99999'
+  fishy-boi:
+    pro:
+      FIRE_RESISTANCE:
+        - '5'
+        - '99999'
+      WATER_BREATHING:
+        - '1'
+        - '99999'
+      DOLPHINS_GRACE:
+        - '1'
+        - '99999'
+      CONDUIT_POWER:
+        - '5'
+        - '99999'
+      FAST_DIGGING:
+        - '3'
+        - '99999'
+      GENERIC_ATTACK_DAMAGE:
+        - '2'
+        - '0'
+      GENERIC_MOVEMENT_SPEED:
+        - '1'
+        - '0'
+    anti:
+      HARM:
+        - '1'
+        - '1'
+  insatiable:
+    pro:
+      GENERIC_MAX_HEALTH:
+        - '20'
+        - '0'
+  naked-warrior:
+    pro:
+      GENERIC_MAX_HEALTH:
+        - '10'
+        - '0'
+      GENERIC_ARMOR:
+        - '10'
+        - '0'
+      GENERIC_KNOCKBACK_RESISTANCE:
+        - '1'
+        - '0'
+      GENERIC_MOVEMENT_SPEED:
+        - '0.2'
+        - '0'
+  dwarven-aptitude:
+    pro:
+      FAST_DIGGING:
+        - '1'
+        - '99999'
+    anti:
+      GENERIC_MOVEMENT_SPEED:
+        - '-0.01'
+        - '0'
